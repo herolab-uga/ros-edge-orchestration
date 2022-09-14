@@ -1,0 +1,13 @@
+<launch>
+
+<!-- Use YOLOv3 -->
+<arg name="network_param_file" default="$(find darknet_ros)/config/yolov2-tiny.yaml"/>
+<arg name="image" default="/tb3_1/camera/rgb/image_raw"/>
+
+<!-- Include main launch file -->
+<include file="$(find darknet_ros)/launch/darknet_ros.launch">
+    <arg name="network_param_file" value="$(arg network_param_file)"/>
+    <arg name="image" value="$(arg image)"/>
+</include>
+
+</launch>

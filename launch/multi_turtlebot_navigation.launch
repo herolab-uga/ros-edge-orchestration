@@ -1,0 +1,110 @@
+<launch>
+
+  <!-- Arguments -->
+  <arg name="model" default="$(env TURTLEBOT3_MODEL)" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="map_file" default="$(find edge_robot)/maps/my_map.yaml"/>
+  <arg name="open_rviz" default="true"/>
+  <arg name="move_forward_only" default="true"/>
+
+  <arg name="first_tb3"  default="tb3_0"/>
+  <!--arg name="second_tb3" default="tb3_1"/-->
+  <!--arg name="third_tb3"  default="tb3_2"/-->
+
+ <arg name="first_tb3_x_pos" default=" 2.0"/>
+  <arg name="first_tb3_y_pos" default=" 2.0"/>
+  <arg name="first_tb3_z_pos" default=" 0.0"/>
+  <arg name="first_tb3_yaw"   default=" 0.0"/>
+
+  <!--arg name="second_tb3_x_pos" default=" -2.0"/-->
+  <!--arg name="second_tb3_y_pos" default=" 2.0"/-->
+  <!--arg name="second_tb3_z_pos" default=" 0.0"/-->
+  <!--arg name="second_tb3_yaw"   default=" 0.0"/-->
+
+  <!--arg name="third_tb3_x_pos" default=" 2.0"/-->
+  <!--arg name="third_tb3_y_pos" default=" -2.0"/-->
+  <!--arg name="third_tb3_z_pos" default=" 0.0"/-->
+  <!--arg name="third_tb3_yaw"   default=" 0.0"/-->
+
+
+
+
+  <param name="/use_sim_time" value="true"/>
+
+  <group ns = "$(arg first_tb3)">
+   <param name="tf_prefix" value="$(arg first_tb3)"/>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)">
+   <param name="frame_id" value="map" />
+  </node>
+
+   <!-- AMCL -->
+   <include file="$(find edge_robot)/launch/amcl_tb3_0.launch"/>
+
+   <!-- Move base -->
+   <include file="$(find edge_robot)/launch/move_base_tb3_0.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+   </include>
+   <!--node pkg="tf" type="static_transform_publisher" name="map_to_map" args="0 0 0 0 0 0 0  /tb3_0/map /map  1000"/-->
+  </group>
+
+
+  <!-- rviz -->
+  <group if="$(arg open_rviz)"> 
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find edge_robot)/rviz/multi_turtlebot3_navigation.rviz"/>
+  </group>
+
+  
+</launch>
+  <!--group ns = "$(arg second_tb3)">
+   <param name="tf_prefix" value="$(arg second_tb3)"/>
+
+   <!-- Map server -->
+   <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)">
+    <param name="frame_id" value="map" />
+   </node>
+
+   <!-- AMCL -->
+   <include file="$(find edge_robot)/launch/amcl_tb3_1.launch"/>
+
+   <!-- Move base -->
+   <include file="$(find edge_robot)/launch/move_base_tb3_1.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+   </include>
+
+   <!--node pkg="tf" type="static_transform_publisher" name="map_to_map" args="0 0 0 0 0 0 0  /tb3_1/map /map  1000"/-->
+  </group-->
+
+
+  <group ns = "$(arg third_tb3)">
+   <param name="tf_prefix" value="$(arg third_tb3)"/>
+
+  <!-- Map server -->
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)">
+   <param name="frame_id" value="map" />
+  </node>
+
+   <!-- AMCL -->
+   <include file="$(find edge_robot)/launch/amcl_tb3_2.launch"/>
+
+   <!-- Move base -->
+   <include file="$(find edge_robot)/launch/move_base_tb3_2.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+   </include>
+
+   <!--node pkg="tf" type="static_transform_publisher" name="map_to_map" args="0 0 0 0 0 0 0  /tb3_2/map /map  1000"/-->
+  </group>
+
+ 
+
+  <!-- rviz -->
+  <group if="$(arg open_rviz)"> 
+    <node pkg="rviz" type="rviz" name="rviz" required="true"
+          args="-d $(find edge_robot)/rviz/multi_turtlebot3_navigation.rviz"/>
+  </group>
+
+</launch>

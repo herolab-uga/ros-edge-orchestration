@@ -1,0 +1,49 @@
+  
+<launch> 
+  <arg name="model" default="waffle_pi" doc="model type [burger, waffle, waffle_pi]"/>
+  <arg name="slam_methods" default="gmapping" doc="slam type [gmapping, cartographer, hector, karto, frontier_exploration]"/>
+  <arg name="move_forward_only" default="false"/>
+  <arg name="configuration_basename" default="turtlebot3_lds_2d.lua"/>
+  <arg name="first_tb3"  default="tb3_1"/>
+  <arg name="second_tb3" default="tb3_2"/>
+  <arg name="third_tb3"  default="tb3_3"/>
+  <arg name="first_tb3_x_pos" default=" 0.5"/>
+  <arg name="first_tb3_y_pos" default=" 1.2"/>
+  <arg name="first_tb3_z_pos" default=" 0.0"/>
+  <arg name="first_tb3_yaw"   default=" 0.0"/>
+
+  <arg name="second_tb3_x_pos" default=" 0.5"/>
+  <arg name="second_tb3_y_pos" default=" 2.8"/>
+  <arg name="second_tb3_z_pos" default=" 0.0"/>
+  <arg name="second_tb3_yaw"   default=" 0.0"/>
+
+  <arg name="third_tb3_x_pos" default=" 3.3"/>
+  <arg name="third_tb3_y_pos" default=" -3.3"/>
+  <arg name="third_tb3_z_pos" default=" 0.0"/>
+  <arg name="third_tb3_yaw"   default=" 0.0"/>
+
+  <!-- perform map merging process  -->
+  <include file="$(find ros_multitb3)/launch/includes/multi_tb3_mapmerge.launch">
+    <arg name="model" value="$(arg model)" />
+    <arg name="move_forward_only" value="$(arg move_forward_only)"/>
+    <arg name="first_tb3" value="$(arg first_tb3)"/>
+    <arg name="second_tb3" value="$(arg second_tb3)"/>
+    <arg name="third_tb3" value="$(arg third_tb3)"/>
+    <arg name="first_tb3_x_pos" default="$(arg first_tb3_x_pos)"/>
+    <arg name="first_tb3_y_pos" default="$(arg first_tb3_y_pos)"/>
+    <arg name="first_tb3_z_pos" default="$(arg first_tb3_z_pos)"/>
+    <arg name="first_tb3_yaw"   default="$(arg first_tb3_yaw)"/>
+    <arg name="second_tb3_x_pos" default="$(arg second_tb3_x_pos)"/>
+    <arg name="second_tb3_y_pos" default="$(arg second_tb3_y_pos)"/>
+    <arg name="second_tb3_z_pos" default="$(arg second_tb3_z_pos)"/>
+    <arg name="second_tb3_yaw"   default="$(arg second_tb3_yaw)"/>
+    <arg name="third_tb3_x_pos" default="$(arg third_tb3_x_pos)"/>
+    <arg name="third_tb3_y_pos" default="$(arg third_tb3_y_pos)"/>
+    <arg name="third_tb3_z_pos" default="$(arg third_tb3_z_pos)"/>
+    <arg name="third_tb3_yaw"   default="$(arg third_tb3_yaw)"/>
+  </include>
+
+ 
+
+
+</launch>

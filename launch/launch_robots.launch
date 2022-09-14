@@ -1,0 +1,9 @@
+<launch>
+   
+    <include file="$(find edge_robot)/launch/tb3_0.launch"/>
+    <include file="$(find edge_robot)/launch/tb3_1.launch"/>
+    <include file="$(find edge_robot)/launch/tb3_2.launch"/>
+
+
+
+</launch>

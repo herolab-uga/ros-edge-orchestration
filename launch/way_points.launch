@@ -1,0 +1,5 @@
+<launch>
+    <node pkg="edge_robot" name="way_points_tb3_1" type="way_points_tb3_1.py"/>
+    <node pkg="edge_robot" name="way_points_tb3_2" type="way_points_tb3_2.py"/>
+    <node pkg="edge_robot" name="way_points_tb3_3" type="way_points_tb3_3.py"/>
+</launch>

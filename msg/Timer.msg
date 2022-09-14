@@ -1,0 +1,3 @@
+float64 time_for_slam
+float64 time_for_merged_map
+float64 time_for_object_detection

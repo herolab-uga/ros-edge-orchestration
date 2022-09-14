@@ -1,0 +1,7 @@
+darknet_ros_topic: /darknet_ros/bounding_boxes
+output_bbx3d_topic: /darknet_ros_3d/bounding boxes
+point_cloud_topic: /tb3_2/camera/depth/points
+working_frame: tb3_2/camera_rgb_optical_frame
+minimum_detectopn_threshold: 0.3
+minimum probability: 0.3
+interested_classes: ["person", "chair", "bottle", "table", "book", "cup", "vase", "laptop", "tvmonitor", "sofa"]
