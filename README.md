@@ -1,1 +1,1 @@
-# herolab-uga-ros-edge-orchestration
+# ros-edge-orchestration
