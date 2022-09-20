@@ -1,0 +1,10 @@
+<launch>
+    <arg name ="mode"  default="Network"/>
+    <node pkg="edge_robot" type="pre_script.py" name="pre_script" output="screen"/>
+    <node pkg="edge_robot" type="scheduler.py" name="scheduler" output="screen">
+        <param name="mode" value="$(arg mode)"/>
+    </node>
+
+
+
+</launch>

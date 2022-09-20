@@ -1,222 +1,298 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import rospy
-from network_analysis.msg import LinkUtilization, NetworkDelay
-from edge_robot.msg import Edgeinfo, Nodes, Edgedata
+from ast import Add
+from pexpect import pxssh
+from edge_robot.msg import Edgedata, EdgeNext 
+import time
 
 
-
-class Scheduler:
+class Utility_Calculator:
     def __init__(self):
+        self.e1_CPU = 0
+        self.e2_CPU = 0
+        self.e3_CPU = 0
+        self.e1_Mem = 0
+        self.e2_Mem = 0
+        self.e3_Mem = 0
+        self.e1_thrp =0
+        self.e2_thrp =0
+        self.e3_thrp =0
+        self.e1_nodes_run =''
+        self.e2_nodes_run = ''
+        self.e3_nodes_run = ''
+        self.assigned_edge = ""
+        self.N1_pre_req = ('R1/SLAM')
+        self.N2_pre_req = ('R1/Navigation')
+        self.N3_pre_req = ('R2/SLAM')
+        self.N4_pre_req = ('R2/Navigation')
+        self.N5_pre_req = ('R3/SLAM')
+        self.N6_pre_req = ('R3/Navigation')
+
+        # mode from launch file
+        self.mode = rospy.get_param('scheduler/mode')
+
+        self.e1_cpu_sub = rospy.Subscriber('/e1/edge_data', Edgedata, self.callback_e1)
+        self.e2_cpu_sub = rospy.Subscriber('/e2/edge_data', Edgedata, self.callback_e2)
+        self.e3_cpu_sub = rospy.Subscriber('/e3/edge_data', Edgedata, self.callback_e3)
+        self.pub_edge = rospy.Publisher('next_edge',  EdgeNext, queue_size=10)
         
-        # for Edge 1
-        self.cpu_perct = 0
-        self.mem_perct = 0
-        self.thrpt_1 = 0
-        self.node_names = []
-    
-        self.loop_rate = rospy.Rate(1)
-        self.e1_pub = rospy.Publisher("/e1/edge_data", Edgedata, queue_size=10)
-        self.e1_cpu_sub = rospy.Subscriber('/e1/cpu_usage', Edgeinfo, self.callback_cpu)
-        self.e1_thp_sub = rospy.Subscriber('/e1/network_analysis/link_utilization', LinkUtilization, self.callback_link)
-        self.e1_nodes_sub = rospy.Subscriber('/e1/current_nodes', Nodes, self.callback_nodes)
 
 
-        # for Edge 2
-        self.cpu_perct_2 = 0
-        self.mem_perct_2 = 0
-        self.thrpt_2 = 0
-        self.node_names_2 = []
-        self.e2_pub = rospy.Publisher("/e2/edge_data", Edgedata, queue_size=10)
-        self.e2_cpu_sub = rospy.Subscriber('/e2/cpu_usage', Edgeinfo, self.callback_cpu_2)
-        self.e2_thp_sub = rospy.Subscriber('/e2/network_analysis/link_utilization', LinkUtilization, self.callback_link_2)
-        self.e2_nodes_sub = rospy.Subscriber('/e2/current_nodes', Nodes, self.callback_nodes_2)
-        
-        # # for Edge 3
-        self.cpu_perct_3 = 0
-        self.mem_perct_3 = 0
-        self.thrpt_3 = 0
-        self.node_names_3 = []
 
-        self.e3_pub = rospy.Publisher("/e3/edge_data", Edgedata, queue_size=10)
-        self.e3_cpu_sub = rospy.Subscriber('/e3/cpu_usage', Edgeinfo, self.callback_cpu_3)
-        self.e3_thp_sub = rospy.Subscriber('/e3/network_analysis/link_utilization', LinkUtilization, self.callback_link_3)
-        self.e3_nodes_sub = rospy.Subscriber('/e3/current_nodes', Nodes, self.callback_nodes_3)
-
-    # CPU_data_callbacks
-    def callback_cpu(self, msg):
-        hostname = 'Edge 1'
-        self.cpu_perct = msg.CPU_usage_perct
-        self.mem_perct = msg.Mem_usage_perct
-        print('cpu of {} is {}'.format(hostname, self.cpu_perct))
-        print('memory of {} is {}'.format(hostname, self.mem_perct))
-
-
-    def callback_cpu_2(self, msg):
-        hostname = 'Edge 2'
-        self.cpu_perct_2 = msg.CPU_usage_perct
-        self.mem_perct_2 = msg.Mem_usage_perct
-        print('cpu of {} is {}'.format(hostname, self.cpu_perct_2))
-        print('memory of {} is {}'.format(hostname, self.mem_perct_2))
-
-
-    def callback_cpu_3(self, msg):
-        hostname = 'Edge 3'
-        self.cpu_perct_3 = msg.CPU_usage_perct
-        self.mem_perct_3 = msg.Mem_usage_perct
-        print('cpu of {} is {}'.format(hostname, self.cpu_perct_3))
-        print('memory of {} is {}'.format(hostname, self.mem_perct_3))
-
-
-    # # throughput callbacks
-    def callback_link(self, msg):
-        hostname = 'Edge 1'
-        self.tx_mbps = msg.total_tx_mbps
-        self.rx_mbps = msg.total_rx_mbps 
-        self.thrpt_1 = self.tx_mbps + self.rx_mbps
-        print("throughput for {} is {} " .format(hostname, self.thrpt_1))
-
-    def callback_link_2(self, msg):
-        hostname = 'Edge 2'
-        self.tx_mbps_2 = msg.total_tx_mbps
-        self.rx_mbps_2 = msg.total_rx_mbps 
-        self.thrpt_2 = self.tx_mbps_2 + self.rx_mbps_2
-        print("throughput for {} is {} " .format(hostname, self.thrpt_2))
-
-    def callback_link_3(self, msg):
-        hostname = 'Edge 3'
-        self.tx_mbps_3 = msg.total_tx_mbps
-        self.rx_mbps_3 = msg.total_rx_mbps 
-        self.thrpt_3 = self.tx_mbps_3 + self.rx_mbps_3
-        print("throughput for {} is {} " .format(hostname, self.thrpt_3))
-    
-    def callback_nodes(self, msg):
-        self.nodes = msg.current_nodes
-        self.node_names = []
-        #print ("Current nodes running on edge 1: ")
-        for node in self.nodes: 
-            # SLAM nodes 
-            if (node =='/tb3_1/turtlebot3_slam_gmapping'): #only to make it more readable
-                self.node_names.append('R1/SLAM')
-            elif (node =='/tb3_2/turtlebot3_slam_gmapping'):
-                self.node_names.append('R2/SLAM')
-            elif (node == '/tb3_3/turtlebot3_slam_gmapping'):
-                self.node_names.append('R3/SLAM')
-            #Navigation nodes
-            elif (node == '/tb3_1/move_base_1'):
-                self.node_names.append('R1/Navigation')
-            elif (node == '/tb3_2/move_base_2'):
-                self.node_names.append('R2/Navigation')
-            elif (node == '/tb3_3/move_base_3'):
-                self.node_names.append('R3/Navigation')
-            # map_merge node
-            elif (node == '/map_merge'):
-                self.node_names.append('Map_Merging')
-            # Object_Detection nodes
-            elif (node == '/darknet_ros_1/darknet_ros'):
-                self.node_names.append('R1/Obj_Detection')
-            elif (node == '/darknet_ros_2/darknet_ros'):
-                self.node_names.append('R2/Obj_Detection')
-            elif (node == '/darknet_ros_3/darknet_ros'):
-                self.node_names.append('R3/Obj_Detection')
-        #print (self.node_names)
-
-
-    def callback_nodes_2(self, msg):
-        self.nodes_2 = msg.current_nodes
-        self.node_names_2 = []
-        print ("Current nodes running on edge 2: ")
-        for node in self.nodes_2: 
-            # SLAM nodes 
-            if (node =='/tb3_1/turtlebot3_slam_gmapping'): #only to make it more readable
-                self.node_names_2.append('R1/SLAM')
-            elif (node =='/tb3_2/turtlebot3_slam_gmapping'):
-                self.node_names_2.append('R2/SLAM')
-            elif (node == '/tb3_3/turtlebot3_slam_gmapping'):
-                self.node_names_2.append('R3/SLAM')
-            #Navigation nodes
-            elif (node == '/tb3_1/move_base_1'):
-                self.node_names_2.append('R1/Navigation')
-            elif (node == '/tb3_2/move_base_2'):
-                self.node_names_2.append('R2/Navigation')
-            elif (node == '/tb3_3/move_base_3'):
-                self.node_names.append('R3/Navigation')
-            # map_merge node
-            elif (node == '/map_merge'):
-                self.node_names_2.append('Map_Merging')
-            # Object_Detection nodes
-            elif (node == '/darknet_ros_1/darknet_ros'):
-                self.node_names_2.append('R1/Obj_Detection')
-            elif (node == '/darknet_ros_2/darknet_ros'):
-                self.node_names_2.append('R2/Obj_Detection')
-            elif (node == '/darknet_ros_3/darknet_ros'):
-                self.node_names_2.append('R3/Obj_Detection')
-        #print (self.node_names_2)
-
-    def callback_nodes_3(self, msg):
-        self.nodes_3 = msg.current_nodes
-        self.node_names_3 = []
-        #print ("Current nodes running on edge 3: ")
-        for node in self.nodes_3: 
-            # SLAM nodes 
-            if (node =='/tb3_1/turtlebot3_slam_gmapping'): #only to make it more readable
-                self.node_names_3.append('R1/SLAM')
-            elif (node =='/tb3_2/turtlebot3_slam_gmapping'):
-                self.node_names.append('R2/SLAM')
-            elif (node == '/tb3_3/turtlebot3_slam_gmapping'):
-                self.node_names_3.append('R3/SLAM')
-            #Navigation nodes
-            elif (node == '/tb3_1/move_base_1'):
-                self.node_names_3.append('R1/Navigation')
-            elif (node == '/tb3_2/move_base_2'):
-                self.node_names_3.append('R2/Navigation')
-            elif (node == '/tb3_3/move_base_3'):
-                self.node_names_3.append('R3/Navigation')
-            # map_merge node
-            elif (node == '/map_merge'):
-                self.node_names_3.append('Map_Merging')
-            # Object_Detection nodes
-            elif (node == '/darknet_ros_1/darknet_ros'):
-                self.node_names_3.append('R1/Obj_Detection')
-            elif (node == '/darknet_ros_2/darknet_ros'):
-                self.node_names_3.append('R2/Obj_Detection')
-            elif (node == '/darknet_ros_3/darknet_ros'):
-                self.node_names_3.append('R3/Obj_Detection')
-        #print (self.node_names_3)
-
-
-    
-    def start(self):
+    def pub_assigned_edge(self):
         rospy.loginfo("Scheduler started")
         while not rospy.is_shutdown():
-            rate = rospy.Rate(1)
-            edge_data = Edgedata()
+            rate = rospy.Rate(0.4)
+            next_edge = EdgeNext()
 
-            # publish data for Edge 1
-            edge_data.curr_CPU = self.cpu_perct
-            edge_data.curr_mem = self.mem_perct
-            edge_data.curr_thpt = self.thrpt_1
-            edge_data.current_nodes = self.node_names
-            self.e1_pub.publish(edge_data)
+            priority_nodes = ['N1', 'N2', 'N3', 'N4','N5', 'N6', 'N7']
+            for node in priority_nodes:
+                print("===============================")
+                print ('CHECKING FOR {}'.format(node))
+                node_req = self.get_req(node)
+                assigned_edge = self.calculate_utility(node, node_req)
+                print("For node {}, {} has max utility!".format(node, assigned_edge))
+                next_edge.next_node = node
+                next_edge.assigned_edge = assigned_edge 
+                self.pub_edge.publish(next_edge) 
+                print("published!")
+                rate.sleep()
 
-            # # publish data for Edge 2
-            edge_data.curr_CPU = self.cpu_perct_2
-            edge_data.curr_mem = self.mem_perct_2
-            edge_data.curr_thpt = self.thrpt_2
-            edge_data.current_nodes = self.node_names_2
-            self.e2_pub.publish(edge_data)
+    
+    def get_req(self, n):
+        if n == 'N1' or n == 'N3' or n == 'N5':
+            req = [69.92, 47, 66.83]   # [CPU%, Mem%, (frequency* bandwidth)]
+        elif n =='N2' or n=='N4' or n =='N6':
+            req = [80.4, 62.53, 3.204]
+        elif n =='N7':
+            req = [39.79, 45.7, 3369.812]
+        return req 
 
-            # # publish data for Edge 3
-            edge_data.curr_CPU = self.cpu_perct_3
-            edge_data.curr_mem = self.mem_perct_3
-            edge_data.curr_thpt = self.thrpt_3
-            edge_data.current_nodes = self.node_names_3
-            self.e3_pub.publish(edge_data)
-            rate.sleep()
-            
+
+
+    def callback_e1(self, msg):
+        self.e1_CPU = msg.curr_CPU
+        self.e1_Mem = msg.curr_mem
+        self.e1_thrp = msg.curr_thpt
+        self.e1_nodes_run = msg.current_nodes
+
+        
+
+   
+
+    def callback_e2(self, msg):
+        self.e2_CPU = msg.curr_CPU
+        self.e2_Mem = msg.curr_mem
+        self.e2_thrp = msg.curr_thpt
+        self.e2_nodes_run = msg.current_nodes
+
+
+
+    def callback_e3(self, msg):
+        self.e3_CPU = msg.curr_CPU
+        self.e3_Mem = msg.curr_mem
+        self.e3_thrp = msg.curr_thpt
+        self.e3_nodes_run = msg.current_nodes
+
+        self.pub_assigned_edge()
+
+    def get_nodes_utility_e1(self, n):
+        UT_curr_nodes_e1 = 0
+        
+        if (n == 'N1'):
+            if self.N1_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        elif (n == 'N2'):
+            if self.N1_pre_req and self.N2_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 2
+        elif (n == 'N3'):
+            if self.N3_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        elif (n == 'N4'):
+            if self.N3_pre_req and self.N4_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        elif (n == 'N5'):
+            if self.N5_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        elif (n == 'N6'):
+            if self.N5_pre_req and self.N6_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        elif (n =='N7'):
+            if self.N1_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+            elif self.N2_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+            elif self.N3_pre_req in self.e1_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 1 ..".format(n))
+                UT_curr_nodes_e1 =+ 1
+        return UT_curr_nodes_e1
+    
+
+    def get_nodes_utility_e2(self, n):
+        UT_curr_nodes_e2 = 0       
+
+        if (n == 'N1'):
+            if self.N1_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 1
+        elif (n == 'N2'):
+            if self.N1_pre_req and self.N2_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 2
+        elif (n == 'N3'):
+            if self.N3_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 1
+        elif (n == 'N4'):
+            if self.N3_pre_req and self.N4_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 2
+        elif (n == 'N5'):
+            if self.N5_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 1
+        elif (n == 'N6'):
+            if self.N5_pre_req and self.N6_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 2
+        elif (n =='N7'):
+            if self.N1_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 1
+            elif self.N2_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2..".format(n))
+                UT_curr_nodes_e2 =+ 1
+            elif self.N3_pre_req in self.e2_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 2 ..".format(n))
+                UT_curr_nodes_e2 =+ 1
+        return UT_curr_nodes_e2
+
+    def get_nodes_utility_e3(self, n):
+        UT_curr_nodes_e3 = 0
+        if (n == 'N1'):
+            if self.N1_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 1
+        elif (n == 'N2'):
+            if self.N1_pre_req and self.N2_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 2
+        elif (n == 'N3'):
+            if self.N3_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 1
+        elif (n == 'N4'):
+            if self.N3_pre_req and self.N4_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 2
+        elif (n == 'N5'):
+            if self.N5_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 1
+        elif (n == 'N6'):
+            if self.N5_pre_req and self.N6_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 2
+        elif (n =='N7'):
+            if self.N1_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 1
+            elif self.N2_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3..".format(n))
+                UT_curr_nodes_e3 =+ 1
+            elif self.N3_pre_req in self.e3_nodes_run:
+                #print ("Pre-sequence nodes for  {} running already on Edge 3 ..".format(n))
+                UT_curr_nodes_e3 =+ 1
+        return UT_curr_nodes_e3
+
+    def calculate_utility(self, node, n_req):
+        self.req_CPU = n_req[0]
+        self.req_mem = n_req[1]
+        self.req_thpt = n_req[2]
+
+        # # Utility for Edge 1
+        UT_CPU_1 = abs(self.e1_CPU - self.req_CPU)
+        #print('E1 CPU Utility: ' + str(UT_CPU_1)) 
+        UT_mem_1 = abs(self.e1_Mem - self.req_mem)
+        #print('E1 Memory Utility: ' + str(UT_mem_1)) 
+        UT_thpt_1 = abs( 20 - self.e1_thrp - self.req_thpt)
+        #print('E1 throughput Utility: ' + str(UT_thpt_1)) 
+        UT_curr_nodes_1 = self.get_nodes_utility_e1(node)
+        #print('E1 nodes utility : ' + str(UT_curr_nodes_1))
+
+        if self.mode == "CPU":
+            self.Total_E1_UT = 0.80*UT_CPU_1+ 0.05*UT_mem_1 + 0.05*UT_thpt_1 + 0.05*UT_curr_nodes_1
+        elif self.mode =="Memory":
+            self.Total_E1_UT = 0.05*UT_CPU_1 + 0.80*UT_mem_1 + 0.05*UT_thpt_1 + 0.05*UT_curr_nodes_1
+        elif self.mode =="Network":
+            self.Total_E1_UT = 0.05*UT_CPU_1 + 0.05*UT_mem_1 + 0.80*UT_thpt_1 + 0.05*UT_curr_nodes_1
+        elif self.mode =="Nodes":
+            self.Total_E1_UT = 0.05*UT_CPU_1 + 0.05*UT_mem_1 + 0.05*UT_thpt_1 + 0.80*UT_curr_nodes_1
+        
+        #print(UT_CPU_1, UT_mem_1, UT_thpt_1, UT_curr_nodes_1, self.Total_E1_UT)
+        #print ('Total E1 Utility: {}'.format(self.Total_E1_UT))
+
+    
+        # # Utility for Edge 22
+        UT_CPU_2 = abs(self.e2_CPU - self.req_CPU)
+        #print('E2 CPU Utility: ' + str(UT_CPU_2)) 
+        UT_mem_2 = abs(self.e2_Mem - self.req_mem)
+        #print('E2 Memory Utility: ' + str(UT_mem_2)) 
+        UT_thpt_2 = abs(20 - self.e2_thrp - self.req_thpt)
+        #print('E2 throughput Utility: ' + str(UT_thpt_2)) 
+        UT_curr_nodes_2 = self.get_nodes_utility_e2(node)
+        #print('E2 nodes utility : ' + str(UT_curr_nodes_2))
+
+        if self.mode == "CPU":
+            self.Total_E2_UT = 0.80*UT_CPU_2+ 0.05*UT_mem_2 + 0.05*UT_thpt_2 + 0.05*UT_curr_nodes_2
+        elif self.mode =="Memory":
+            self.Total_E2_UT = 0.05*UT_CPU_2 + 0.80*UT_mem_2 + 0.05* UT_thpt_2 + 0.05* UT_curr_nodes_2
+        elif self.mode =="Network":
+            self.Total_E2_UT = 0.05*UT_CPU_2 + 0.05*UT_mem_2 + 0.80*UT_thpt_2 + 0.05*UT_curr_nodes_2
+        elif self.mode =="Nodes":
+            self.Total_E2_UT = 0.05*UT_CPU_2 + 0.05*UT_mem_2 + 0.05*UT_thpt_2  + 0.80*UT_curr_nodes_2
+    
+        # print(UT_CPU_2, UT_mem_2, UT_thpt_2, UT_curr_nodes_2, self.Total_E2_UT)
+        # print ('Total E2 Utility: {}'.format(self.Total_E2_UT))
+
+        # # Utility for Edge 3 
+
+        UT_CPU_3 = abs(self.e3_CPU - self.req_CPU)
+        #print('E3 CPU Utility: ' + str(UT_CPU_3)) 
+        UT_mem_3 = abs(self.e3_Mem - self.req_mem)
+        #print('E3 Memory Utility:sum(self.tx_mbps_3, self.rx_mbps_3) ' + str(UT_mem_3)) 
+        UT_thpt_3 = abs(20 - self.e3_thrp - self.req_thpt)
+        #print('E3 throughput Utility: ' + str(UT_thpt_3)) 
+        UT_curr_nodes_3 = self.get_nodes_utility_e3(node)
+        #print('E3 nodes utility : ' + str(UT_curr_nodes_3))
+       
+        if self.mode == "CPU":
+            self.Total_E3_UT = 0.80*UT_CPU_3 + 0.05*UT_mem_3 + 0.05*UT_thpt_3 + 0.05*UT_curr_nodes_3
+        elif self.mode =="Memory":
+            self.Total_E3_UT = 0.05*UT_CPU_3 + 0.80*UT_mem_3 + 0.05*UT_thpt_3 + 0.05*UT_curr_nodes_3
+        elif self.mode =="Network":
+            self.Total_E3_UT = 0.05*UT_CPU_3 + 0.05*UT_mem_3 + 0.80*UT_thpt_3 + 0.05*UT_curr_nodes_3
+        elif self.mode =="Nodes":
+            self.Total_E3_UT = 0.05*UT_CPU_3 + 0.05*UT_mem_3 + 0.05*UT_thpt_3 + 0.80*UT_curr_nodes_3
+
+        Total_UTs = {'E1':self.Total_E1_UT, 'E2':self.Total_E2_UT, 'E3':self.Total_E3_UT}
+        self.assigned_edge = max(Total_UTs, key=Total_UTs.get)
+        self.max_UT = max(Total_UTs.values())
+        #print(self.max_UT)
+        #print(self.assigned_edge)
+        return self.assigned_edge
+
+
 
 if __name__ == '__main__':
-    rospy.init_node('executor')
-    scheduler_ = Scheduler()
-    scheduler_.start()
+    rospy.init_node('Utility_Calculator')
+    utility_calc = Utility_Calculator()
     rospy.spin()
-    

@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find edge_robot)/launch/multi_turtlebot_3.launch"/>
+    <node pkg="network_analysis" type="link_utilization.py" name="local_link_utilization" output="screen"/>
+    <node pkg="network_analysis" type="pingactionserver" name="local_pingactionserver" output="screen"/>
+    <node pkg="edge_robot" type="cpu_param_pub.py" name="local_cpu_param_pub" output="screen"/>
+
+
+
+</launch>
