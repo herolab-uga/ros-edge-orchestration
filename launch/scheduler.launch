@@ -1,8 +1,10 @@
 <launch>
     <arg name ="mode"  default="Network"/>
-    <node pkg="edge_robot" type="pre_script.py" name="pre_script" output="screen"/>
+    <rosparam file="$(find edge_robot)/config/task_req.yaml"/>
     <node pkg="edge_robot" type="scheduler.py" name="scheduler" output="screen">
         <param name="mode" value="$(arg mode)"/>
+        <rosparam file="$(find edge_robot)/config/task_req.yaml"/>
+        <!--rosparam param="task_seq" subst_value="True">$(arg task_seq)</rosparam-->
     </node>
 
 
