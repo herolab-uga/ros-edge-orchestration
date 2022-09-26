@@ -10,43 +10,18 @@ class Executor:
     def __init__(self):
         rospy.loginfo("Executor started")
         self.e1_cpu_sub = rospy.Subscriber('/next_edge', EdgeNext, self.execute_task)
+        self.commands = rospy.get_param('scheduler/commands')
 
     def execute_task(self, msg):
         next_edge = msg.assigned_edge
         next_node = msg.next_node
-        N1 = 'nohup roslaunch edge_robot navigation_1.launch &'
-        N2 = 'nohup roslaunch edge_robot tb3_1_yolov3.launch &'
-        N3 = 'nohup roslaunch edge_robot navigation_2.launch &'
-        N4 = 'nohup roslaunch edge_robot tb3_2_yolov3.launch &'
-        N5 = 'nohup roslaunch edge_robot navigation_3.launch &'
-        N6 = 'nohup roslaunch edge_robot tb3_3_yolov3.launch &'
-        N7 = 'nohup roslaunch edge_robot multi_tb3_mapmerge.launch &'
+        max_utility = msg.totalUT
         # print(next_node)
         # print(next_edge) 
-        
+        print("For node {}, {} has max utility {}!".format(next_node, next_edge, max_utility))
+        command = self.commands.get(next_node)
+        self.task_offload(command, next_edge)
 
-        if next_node =='N1':
-           print ('Ive got this')
-           self.task_offload(N1, next_edge)
-           time.sleep(20)
-        elif next_node =='N2':
-           self.task_offload(N2, next_edge)
-           time.sleep(20)
-        elif next_node=='N3':
-           self.task_offload(N3, next_edge)
-           time.sleep(20)
-        elif next_node =='N4':
-           self.task_offload(N4, next_edge)
-           time.sleep(20)
-        elif next_node =='N5':
-           self.task_offload(N5, next_edge)
-           time.sleep(20)
-        elif next_node =='N6':
-           self.task_offload(N6, next_edge)
-           time.sleep(20)
-        elif next_node =='N7':
-           self.task_offload(N7, next_edge)
-           time.sleep(20)
            
 
     def task_offload(self, task, edge):

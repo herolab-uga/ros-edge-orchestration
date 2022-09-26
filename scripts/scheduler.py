@@ -3,11 +3,12 @@ import rospy
 from ast import Add
 from pexpect import pxssh
 from edge_robot.msg import Edgedata, EdgeNext 
-import time
+from collections import defaultdict
 
 
 class Utility_Calculator:
     def __init__(self):
+        
         self.e1_CPU = 0
         self.e2_CPU = 0
         self.e3_CPU = 0
@@ -43,28 +44,33 @@ class Utility_Calculator:
 
 
 
-    def pub_assigned_edge(self):
+    def get_assigned_edge(self):
         rospy.loginfo("Scheduler started")
         while not rospy.is_shutdown():
             rate = rospy.Rate(0.4)
             next_edge = EdgeNext()
 
+            assign_list = {}
+            list_nodes = []
+            edges_assign = []
+            #self.next_assign_list = {} 
             for node in self.task_seq:
-                print("===============================")
-                print ('CHECKING FOR {}'.format(node))
-                node_req = self.task_req.get(node)
-                assigned_edge = self.calculate_utility(node, node_req)
-                print("For node {}, {} has max utility!".format(node, assigned_edge))
-                next_edge.next_node = node
-                next_edge.assigned_edge = assigned_edge 
-                # publish it for the executor 
-                self.pub_edge.publish(next_edge) 
-                #print("published!")
-                rate.sleep()
+                node_req = self.task_req.get(node)  # get nodes requirement
+                assigned_edge = self.calculate_utility(node, node_req) # get the edge for that node with max utility
+                #print("For node {}, {} has max utility!".format(node, assigned_edge))
+                list_nodes.append(node) #  node to nodes list 
+                edges_assign.append(assigned_edge) # edge to edges list
+            for node in range(len(list_nodes)):
+                assign_list[list_nodes[node]] = edges_assign[node] # populate dict from two lists
+            #print(assign_list) 
+            self.pub_allocation(assign_list) # send the list to be published
+            rate.sleep()
 
 
+          
 
     def callback_e1(self, msg):
+        self.e1_num = msg.edge_num 
         self.e1_CPU = msg.curr_CPU
         self.e1_Mem = msg.curr_mem
         self.e1_thrp = msg.curr_thpt
@@ -85,7 +91,7 @@ class Utility_Calculator:
         self.e3_thrp = msg.curr_thpt
         self.e3_nodes_run = msg.current_nodes
 
-        self.pub_assigned_edge()
+        self.get_assigned_edge()
 
     def get_nodes_utility_e1(self, n):
         UT_curr_nodes_e1 = 0
@@ -138,7 +144,7 @@ class Utility_Calculator:
         if edge == list(ranked_UT_nodes)[0]:
             rank_value = (self.edges_num - 1) / self.edges_num 
         elif edge == list(ranked_UT_nodes)[1]:
-            rank_value = (self.edges_num - 2)/ self.edges_num
+            rank_value = (self.edges_num - 2) / self.edges_num
         elif edge == list(ranked_UT_nodes)[2]:
             rank_value = (self.edges_num - 3) / self.edges_num
         return rank_value
@@ -148,6 +154,7 @@ class Utility_Calculator:
     def calculate_utility(self, node, n_req):
         self.req_CPU = n_req[0]
         self.req_mem = n_req[1]  # 
+        self.req_thpt = n_req[2]
         # for e in range(1,4):
         #     sub_edge_data = rospy.Subscriber('/e'+(str(e))+'/edge_data', Edgedata, self.callback_edge)
         max_cpu = 100
@@ -188,12 +195,39 @@ class Utility_Calculator:
 
 
         Total_UTs = {'E1':self.Total_E1_UT, 'E2':self.Total_E2_UT, 'E3':self.Total_E3_UT}
+        #print (Total_UTs)
         self.assigned_edge = max(Total_UTs, key=Total_UTs.get)
         self.max_UT = max(Total_UTs.values())
         return self.assigned_edge
        
 
+    def pub_allocation(self, list_assign): 
+        next_edge = EdgeNext()
+        curr_list={}
+        for i in range(len(self.e1_nodes_run)):
+            curr_list[self.e1_nodes_run[i]] = 'E1'
+        for i in range(len(self.e2_nodes_run)):
+            curr_list[self.e2_nodes_run[i]] = 'E2'
+        for i in range(len(self.e3_nodes_run)):
+            curr_list[self.e3_nodes_run[i]] = 'E3'
+        print("Current Assignment:", curr_list)
+        print("Suggested Assignment: ", list_assign)
+        new_assign = dict(list_assign.items() - curr_list.items())
+        print("Updated Assignment", new_assign)
+
+        # publish it for the executor
+        for k, v in new_assign.items():
+            next_edge.totalUT = self.max_UT
+            next_edge.next_node = k
+            next_edge.assigned_edge = v
+            self.pub_edge.publish(next_edge) 
+        print("Published")
         
+        # next_edge.next_node = node
+        # next_edge.assigned_edge = assigned_edge 
+        # self.pub_edge.publish(next_edge) 
+        # #print("published!")
+        # rate.sleep()
    
  
     
@@ -204,4 +238,3 @@ if __name__ == '__main__':
     rospy.init_node('Utility_Calculator')
     utility_calc = Utility_Calculator()
     rospy.spin()
-
