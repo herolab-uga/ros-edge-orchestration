@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="edge_robot" name="tb_1_tr" type="pose_publisher_r1.py" output="screen"/> 
+    <node pkg="edge_robot" name="tb_2_tr" type="pose_publisher_r2.py" output="screen"/>
+    <node pkg="edge_robot" name="tb_3_tr" type="pose_publisher_r3.py" output="screen"/>
+    
+
+</launch>

@@ -1,0 +1,58 @@
+task_seq:
+    - R3_Obj_Detection
+    - R2_Navigation
+    - R2_Obj_Detection
+    - R1_Obj_Detection
+    - R3_Navigation
+    - Map_Merging
+    - R1_Navigation
+
+task_req: { 
+  'R1_SLAM' : [35.195, 2.5, 2.53], 
+  'R1_Navigation': [2.705,2.33, 2.328],
+  'R1_Obj_Detection': [60.035, 20.04, 35.652], 
+  'Map_Merging': [9.607, 2.83, 3.620],
+  'R2_SLAM' : [35.195, 2.5, 2.53], 
+  'R2_Navigation': [2.705,2.33, 2.328],
+  'R2_Obj_Detection': [60.035, 20.04, 35.652],
+  'R3_SLAM' : [35.195, 2.5, 2.53], 
+  'R3_Navigation': [2.705,2.33, 2.328],
+  'R3_Obj_Detection': [60.035, 20.04, 35.652]
+
+}
+
+weights: {
+  'CPU' : [1, 0, 0, 0],
+  'Memory' : [0, 1, 0, 0],
+  'Network': [0, 0, 1, 0],
+  'Nodes': [0, 0, 0, 1],
+  'all' : [0.25, 0.25, 0.25, 0.25],
+  'new' : [0.33, 0.33, 0.33, 0.0]
+}
+
+task_req_seq: {
+  'R1_SLAM' : ['R1_SLAM'], 
+  'R1_Navigation': ['R1_SLAM','R1_Navigation'],
+  'R1_Obj_Detection': ['R1_Obj_Detection'], 
+  'Map_Merging': ['R1_SLAM','R2_SLAM','R3_SLAM','Map_Merging'],
+  'R2_SLAM' : ['R2_SLAM'],
+  'R2_Navigation': ['R2_SLAM','R2_Navigation'],
+  'R2_Obj_Detection': ['R1_Obj_Detection'], 
+  'R3_SLAM' : ['R3_SLAM'],
+  'R3_Navigation': ['R3_SLAM','R3_Navigation'],
+  'R3_Obj_Detection': ['R3_Obj_Detection']
+}
+
+commands: {
+  'R1_Navigation' : 'nohup roslaunch edge_robot navigation_1.launch &',
+  'R1_Obj_Detection' : 'nohup roslaunch edge_robot tb3_1_yolov3.launch &',
+  'R2_Navigation' : 'nohup roslaunch edge_robot navigation_2.launch &',
+  'R2_Obj_Detection' : 'nohup roslaunch edge_robot tb3_2_yolov3.launch &',
+  'R3_Navigation' : 'nohup roslaunch edge_robot navigation_3.launch &',
+  'R3_Obj_Detection' : 'nohup roslaunch edge_robot tb3_3_yolov3.launch &',
+  'Map_Merging' : 'nohup roslaunch edge_robot multi_tb3_mapmerge.launch &', 
+  'R1_SLAM' : 'nohup roslaunch edge_robot tb3_1_slam.launch &',
+  'R2_SLAM' : 'nohup roslaunch edge_robot tb3_2_slam.launch &',
+  'R3_SLAM' : 'nohup roslaunch edge_robot tb3_3_slam.launch &'
+
+}

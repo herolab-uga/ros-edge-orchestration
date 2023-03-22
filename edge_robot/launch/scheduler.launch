@@ -1,0 +1,17 @@
+<launch>
+    <arg name ="mode"  default="all"/> <!-- can be CPU, Network, Memory, all, fixed-->
+    <rosparam file="$(find edge_robot)/config/task_req_yolo_obj.yaml"/>
+    <node pkg="edge_robot" type="gateway.py" name="gateway" output="screen"/>
+    <node pkg="edge_robot" type="scheduler.py" name="scheduler" output="screen">
+        <param name="mode" value="$(arg mode)"/>
+        <rosparam file="$(find edge_robot)/config/task_req_yolo_obj.yaml"/>
+        <!--rosparam param="task_seq" subst_value="True">$(arg task_seq)</rosparam-->
+    </node>
+    <node pkg="edge_robot" type="executor.py" name="executor" output="screen">
+        <param name="mode" value="$(arg mode)"/>
+        <rosparam file="$(find edge_robot)/config/task_req_yolo_obj.yaml"/>
+        <!--rosparam param="task_seq" subst_value="True">$(arg task_seq)</rosparam-->
+    </node>
+
+
+</launch>

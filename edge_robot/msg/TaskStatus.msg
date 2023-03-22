@@ -1,0 +1,2 @@
+string status
+float64 move_base_state

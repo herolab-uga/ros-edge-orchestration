@@ -1,0 +1,7 @@
+<launch>
+    <node pkg="edge_robot" name="wp_1" type="wp_1.py" output="screen"/> 
+    <node pkg="edge_robot" name="wp_2" type="wp_2.py" output="screen"/>
+    <node pkg="edge_robot" name="wp_3" type="wp_3.py" output="screen"/>
+    
+
+</launch>

@@ -1,0 +1,11 @@
+<!--
+   Record HRP-2 data automatically in three separate rosbags:
+   - cameras images
+   - hrpsys information (IMU, force sensors, robot position)
+   - diagnostics (node output, diagnostics)
+  -->
+
+<launch>
+ <node pkg="rosbag" type="record" name="rosbag_record_local"
+       args="rosbag record -a -o dynamic_all_5.bag -x /tb3_0/yolov5/image_out|/tb3_1/yolov5/image_out|/tb3_2/yolov5/image_out|/tb3_1/camera/(.*)|/tb3_2/camera/(.*)|/tb3_0/camera/(.*)|/tb3_1/scan|/tb3_2/scan|/tb3_0/scan|/tb3_1/map|/tb3_2/map|/tb3_0/map"/>   
+</launch>

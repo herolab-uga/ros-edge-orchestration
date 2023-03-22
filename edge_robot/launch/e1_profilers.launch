@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="network_analysis" name="link_utilization_1" type="link_utilization.py" output="screen"/> 
+    <node pkg="edge_robot" name="e1_cpu_profiler" type="e1_cpu_profiler.py" output="screen"/>
+    <node pkg="edge_robot" name="e1_task_profiler" type="e1_task_profiler.py" output="screen"/>
+
+</launch>
