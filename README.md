@@ -50,9 +50,9 @@ $ catkin_make
  # export TURTLEBOT3_MODEL=waffle_pi
  $ roscore 
 ```
-The following launch file would launch three turtlebot3s with gmapping in Gazebo world. 
+The following launch file would launch three turtlebot3s in Gazebo world with RViz for visualization. 
 ```
-roslaunch edge_robot task_setup.launch
+roslaunch edge_robot test_setup.launch
 ```
 For pose publishing and way points for navigation 
 ```
@@ -78,16 +78,19 @@ roslaunch edge_robot e3_profilers.launch
 ### Preinitialized tasks on edge devices ###
 on edge 1:
 ```
+roslaunch edge_robot tb3_0_slam.launch
 roslaunch edge_robot tb3_0_nav.launch
 roslaunch edge_robot tb3_0_yolov5.launch
 ```
 on edge 2: 
 ```
+roslaunch edge_robot tb3_1_slam.launch
 roslaunch edge_robot tb3_1_nav.launch
 roslaunch edge_robot tb3_1_yolov5.launch
 ```
 on edge 3:
 ```
+roslaunch edge_robot tb3_2_slam.launch
 roslaunch edge_robot tb3_2_nav.launch
 roslaunch edge_robot tb3_2_yolov5.launch
 ```
