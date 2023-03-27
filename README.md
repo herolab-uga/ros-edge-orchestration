@@ -92,7 +92,7 @@ roslaunch edge_robot tb3_2_nav.launch
 roslaunch edge_robot tb3_2_yolov5.launch
 ```
 ## Scheduler on local Machine ## 
-Launch the following for setting the mode of the scheduler variant. This launch file takes in the parameters from the config/task_req_yolo_obj.yaml which are predefined for the task tested. It launches the python scripts for Gateway, Scheduler and the Executor. 
+Set the mode of the scheduler variant from CPU, Network, Memory, all, fixed within the following launch file. It takes in the parameters from the config/task_req_yolo_obj.yaml which are predefined for the task tested and launches the Gateway, Scheduler and the Executor nodes. 
 ```
 roslaunch edge_robot scheduler.launch
 ``` 
