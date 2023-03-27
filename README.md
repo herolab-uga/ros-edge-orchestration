@@ -5,7 +5,7 @@ A ROS-based package for utility-aware dynamic task offloading framework based on
 
 #### Requirement: ####
 This package is distributed on following nodes:
-* 3 Edge devices(SBCs) - Nvidia Jetson nanos 
+* 3 Edge devices(SBCs) - Nvidia Jetson Nanos 
 * 3 Turtlebot3s spawned on Gazebo Simulator - Local Machine
 
 
