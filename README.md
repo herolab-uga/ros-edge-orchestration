@@ -10,7 +10,7 @@ This package is distributed on following nodes:
 
 
 ## Overview ##
-Continuous device, network and task profilers are continuously running on edge devices. For each task assigned, an edge with maximum utility is derived using a utility maximization technique with weights variation and a system reward assignment for task connectivity or sensitivity. A scheduler is in charge of task assignment, whereas an executor is responsible for task offloading on edge devices. 
+Continuous device, network and task profilers are continuously running on edge devices. For each task assigned, an edge with maximum utility is derived using a utility maximization technique with weights variation and a system reward assignment for task connectivity. A scheduler is in charge of task assignment, whereas an executor is responsible for task offloading on edge devices. 
 
 * Credit for spawning multiple turtlebot3 in Gazebo ROS Noetic goes to [hikashi](https://github.com/hikashi/multi-robot-rrt-exploration-noetic/tree/main/ros_multi_tb3 "multi-robot-rrt-exploration-noetic") 
 * Credit for the use of ROS-Yolov5 package goes to [mats-robotics](https://github.com/mats-robotics/yolov5_ros "YOLOv5 ROS")
